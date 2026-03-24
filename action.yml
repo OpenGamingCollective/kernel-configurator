@@ -1,0 +1,22 @@
+name: "Kernel Configurator"
+description: "Modify a Linux kernel CONFIG file by applying SET and UNSET patches"
+
+inputs:
+  config:
+    description: "Path to the kernel CONFIG file to modify"
+    required: true
+  set:
+    description: "Path to one or multiple files of key=value lines to apply"
+    required: true
+  unset:
+    description: "Path to one or multiple files of lines to unset (Optional)"
+    required: false
+    default: ""
+  output:
+    description: "Output file path (Modifies in-place if unset)"
+    required: false
+    default: ""
+
+runs:
+  using: "node20"
+  main: "dist/index.js"

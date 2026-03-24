@@ -1,0 +1,16 @@
+{
+  "name": "kernel-configurator",
+  "version": "1.0.0",
+  "description": "GitHub Action to modify Linux kernel CONFIG files",
+  "main": "index.js",
+  "scripts": {
+    "build": "ncc build index.js -o dist"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@actions/core": "^1.11.1"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.3"
+  }
+}
