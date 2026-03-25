@@ -27585,6 +27585,7 @@ function parseUnsetFile(filePath) {
 function applySet(configData, entries) {
   let modified = 0;
   let added = 0;
+  let skipped = 0;
   const lines = configData.split("\n");
 
   for (const { key, value } of entries) {
@@ -27593,7 +27594,18 @@ function applySet(configData, entries) {
     let found = false;
 
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].startsWith(setPrefix) || lines[i] === unsetMarker) {
+      if (lines[i].startsWith(setPrefix)) {
+        if (lines[i] === `${key}=${value}`) {
+          core.info(`${key}=${value} already set, skipping`);
+          skipped++;
+        } else {
+          lines[i] = `${key}=${value}`;
+          modified++;
+        }
+        found = true;
+        break;
+      }
+      if (lines[i] === unsetMarker) {
         lines[i] = `${key}=${value}`;
         found = true;
         modified++;
@@ -27607,12 +27619,12 @@ function applySet(configData, entries) {
     }
   }
 
-  return { configData: lines.join("\n"), modified, added };
+  return { configData: lines.join("\n"), modified, added, skipped };
 }
 
 function applyUnset(configData, entries) {
   let unsetCount = 0;
-  const warnings = [];
+  const notFound = [];
   const lines = configData.split("\n");
 
   for (const key of entries) {
@@ -27630,11 +27642,11 @@ function applyUnset(configData, entries) {
     }
 
     if (!found) {
-      warnings.push(`${key} not found in config, skipping unset`);
+      notFound.push(`${key} not found in config, skipping unset`);
     }
   }
 
-  return { configData: lines.join("\n"), unsetCount, warnings };
+  return { configData: lines.join("\n"), unsetCount, notFoundCount: notFound.length, notFound };
 }
 
 function main() {
@@ -27670,7 +27682,7 @@ function main() {
   configData = setResult.configData;
 
   let unsetCount = 0;
-  let warnCount = 0;
+  let notFoundCount = 0;
   if (unsetPaths.length > 0) {
     const unsetEntries = [];
     for (const p of unsetPaths) {
@@ -27679,15 +27691,15 @@ function main() {
     const unsetResult = applyUnset(configData, unsetEntries);
     configData = unsetResult.configData;
     unsetCount = unsetResult.unsetCount;
-    warnCount = unsetResult.warnings.length;
-    for (const w of unsetResult.warnings) {
-      core.warning(w);
+    notFoundCount = unsetResult.notFoundCount;
+    for (const msg of unsetResult.notFound) {
+      core.info(msg);
     }
   }
 
   fs.writeFileSync(outputPath, configData);
   core.info(
-    `Set: ${setResult.modified}, Added: ${setResult.added}, Unset: ${unsetCount}, Warnings: ${warnCount}`
+    `Set: ${setResult.modified}, Skipped: ${setResult.skipped}, Added: ${setResult.added}, Unset: ${unsetCount}, Not found: ${notFoundCount}`
   );
 }
 
